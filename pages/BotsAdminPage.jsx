@@ -459,4 +459,314 @@ const BotsAdminPage = () => {
                           onClick={() => openDeleteModal(botItem.id, botItem.name)}
                           className="px-4 py-2 bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-800/50 rounded-lg text-sm transition-colors flex-1 min-w-[120px]"
                         >
-                          Уда
+                          Удалить бота
+                        </button>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                        <div className="text-center p-2 bg-gray-800/30 rounded">
+                          <div className="text-gray-400">Пользователи</div>
+                          <div className="text-white font-medium">{botItem.usersCount || 0}</div>
+                        </div>
+                        <div className="text-center p-2 bg-gray-800/30 rounded">
+                          <div className="text-gray-400">Призы</div>
+                          <div className="text-white font-medium">{botItem.wheelItemsCount || 0}</div>
+                        </div>
+                        <div className="text-center p-2 bg-gray-800/30 rounded">
+                          <div className="text-gray-400">Статус</div>
+                          <div className={`font-medium ${
+                            botItem.status === 'active' ? 'text-green-400' : 'text-yellow-400'
+                          }`}>
+                            {botItem.status === 'active' ? 'Активен' : 'Неактивен'}
+                          </div>
+                        </div>
+                        <div className="text-center p-2 bg-gray-800/30 rounded">
+                          <div className="text-gray-400">Создан</div>
+                          <div className="text-gray-400">{botItem.createdAt.toLocaleDateString('ru-RU')}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Информация внизу */}
+        {botsList.length > 0 && (
+          <div className="mt-8 text-center text-sm text-gray-500">
+            Всего доступно ботов: {botsList.length} • Нажмите на бота для просмотра действий
+          </div>
+        )}
+
+        {/* Модальное окно создания бота */}
+        <CreateBotModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSubmit={handleCreateBot}
+        />
+
+        {/* Модальное окно подтверждения удаления */}
+        <ConfirmModal
+          isOpen={deleteModal.isOpen}
+          onClose={closeDeleteModal}
+          onConfirm={handleDeleteBot}
+          title="Удалить бота?"
+          message={`Бот "${deleteModal.botName}" будет удален вместе со всеми данными. Это действие нельзя отменить.`}
+          confirmText="Удалить навсегда"
+          cancelText="Отмена"
+          type="danger"
+        />
+      </div>
+    </div>
+  );
+};
+
+// ===== ДОПОЛНИТЕЛЬНЫЕ КОМПОНЕНТЫ =====
+
+const CreateBotModal = ({ isOpen, onClose, onSubmit }) => {
+  const [form, setForm] = useState({
+    name: "",
+    username: "",
+    token: "",
+    channel: "",
+    leadsChannel: "",
+    requireSubscription: true
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.username.trim() || !form.token.trim()) {
+      alert("Заполните обязательные поля");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await onSubmit(form);
+      setForm({
+        name: "",
+        username: "",
+        token: "",
+        channel: "",
+        leadsChannel: "",
+        requireSubscription: true
+      });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-gradient-to-b from-gray-900 to-gray-950 rounded-xl p-6 max-w-md w-full border border-gray-800 shadow-2xl animate-fadeIn">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-white">Создать нового бота</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">
+              Название бота *
+            </label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+              className="w-full p-3 rounded-lg bg-gray-800/50 text-white border border-gray-700 focus:border-[#f5bb5f] focus:outline-none transition-colors"
+              placeholder="Мой телеграм бот"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">
+              Telegram username *
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                @
+              </span>
+              <input
+                type="text"
+                value={form.username}
+                onChange={(e) => setForm(f => ({ ...f, username: e.target.value }))}
+                className="w-full pl-8 p-3 rounded-lg bg-gray-800/50 text-white border border-gray-700 focus:border-[#f5bb5f] focus:outline-none transition-colors"
+                placeholder="username_bot"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">
+              Telegram Bot Token *
+            </label>
+            <input
+              type="text"
+              value={form.token}
+              onChange={(e) => setForm(f => ({ ...f, token: e.target.value }))}
+              className="w-full p-3 rounded-lg bg-gray-800/50 text-white border border-gray-700 focus:border-[#f5bb5f] focus:outline-none transition-colors"
+              placeholder="1234567890:ABCDEF..."
+              required
+            />
+            <div className="text-xs text-gray-500 mt-2">
+              Получите у @BotFather
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">
+              Канал для подписки (ID)
+            </label>
+            <input
+              type="text"
+              value={form.channel}
+              onChange={(e) => setForm(f => ({ ...f, channel: e.target.value }))}
+              className="w-full p-3 rounded-lg bg-gray-800/50 text-white border border-gray-700 focus:border-[#f5bb5f] focus:outline-none transition-colors"
+              placeholder="-1001234567890"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">
+              Канал для лидов (ID)
+            </label>
+            <input
+              type="text"
+              value={form.leadsChannel}
+              onChange={(e) => setForm(f => ({ ...f, leadsChannel: e.target.value }))}
+              className="w-full p-3 rounded-lg bg-gray-800/50 text-white border border-gray-700 focus:border-[#f5bb5f] focus:outline-none transition-colors"
+              placeholder="-1001234567890"
+            />
+          </div>
+
+          <div className="flex items-center gap-3 pt-2">
+            <input
+              type="checkbox"
+              id="requireSubscription"
+              checked={form.requireSubscription}
+              onChange={(e) => setForm(f => ({ ...f, requireSubscription: e.target.checked }))}
+              className="w-4 h-4 text-[#f5bb5f] bg-gray-700 border-gray-600 rounded focus:ring-[#f5bb5f]"
+            />
+            <label htmlFor="requireSubscription" className="text-sm text-gray-300">
+              Требовать подписку на канал для участия
+            </label>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors flex-1"
+            >
+              Отмена
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-4 py-2 bg-[#f5bb5f] hover:bg-[#e6aa4e] text-black font-medium rounded-lg transition-colors flex-1 disabled:opacity-50"
+            >
+              {submitting ? "Создание..." : "Создать"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Остальные компоненты остаются без изменений...
+const LoadingSpinner = () => (
+  <div className="flex justify-center items-center h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#f5bb5f]"></div>
+  </div>
+);
+
+const ErrorMessage = ({ message }) => (
+  <div className="flex justify-center items-center h-screen">
+    <div className="p-6 max-w-lg bg-red-900/20 border border-red-800 rounded-lg">
+      <div className="text-red-300 font-semibold mb-2">Ошибка</div>
+      <div className="text-white">{message}</div>
+      <button
+        onClick={() => window.location.href = '/login'}
+        className="mt-4 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg"
+      >
+        Войти снова
+      </button>
+    </div>
+  </div>
+);
+
+const EmptyState = ({ onCreateBot }) => (
+  <div className="text-center py-12">
+    <div className="w-20 h-20 rounded-full bg-[#f5bb5f]/10 flex items-center justify-center mx-auto mb-6">
+      <span className="text-4xl">🤖</span>
+    </div>
+    <h2 className="text-xl font-bold text-white mb-3">Нет доступных ботов</h2>
+    <p className="text-gray-400 mb-8 max-w-md mx-auto">
+      Создайте своего первого Telegram бота для управления розыгрышами и пользователями
+    </p>
+    <button
+      onClick={onCreateBot}
+      className="px-6 py-3 bg-[#f5bb5f] hover:bg-[#e6aa4e] text-black font-medium rounded-lg transition-colors"
+    >
+      Создать первого бота
+    </button>
+  </div>
+);
+
+const TabNavigation = ({ activeTab, onTabChange }) => {
+  const tabs = [
+    { id: "settings", label: "Настройки", icon: "⚙️" },
+    { id: "wheel", label: "Колесо", icon: "🎡" },
+    { id: "users", label: "Пользователи", icon: "👥" }
+  ];
+
+  return (
+    <div className="flex gap-1 p-1 bg-gray-800/30 rounded-lg inline-flex">
+      {tabs.map(tab => (
+        <button
+          key={tab.id}
+          onClick={() => onTabChange(tab.id)}
+          className={`px-4 py-2 rounded-md font-medium transition-all flex items-center gap-2 text-sm ${
+            activeTab === tab.id 
+              ? "bg-[#f5bb5f] text-black shadow" 
+              : "text-gray-400 hover:text-white hover:bg-gray-700/50"
+          }`}
+        >
+          <span>{tab.icon}</span>
+          <span>{tab.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+};
+
+const TabContent = ({ activeTab, bot, botId, onUpdateSettings }) => {
+  const components = {
+    settings: <BotSettingsTab bot={bot} onUpdateSettings={onUpdateSettings} />,
+    wheel: <WheelTab botId={botId} />,
+    users: <UsersTab botId={botId} />
+  };
+  
+  return (
+    <div className="bg-gray-800/20 rounded-xl p-4 border border-gray-700/50">
+      {components[activeTab]}
+    </div>
+  );
+};
+
+export default BotsAdminPage;
